@@ -1,5 +1,6 @@
 import json
 import random
+import heapq
 
 class Memory:
     def __init__(self):
