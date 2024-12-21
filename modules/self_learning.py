@@ -1,4 +1,5 @@
 import re
+import random
 
 class SelfLearning:
     def __init__(self):
@@ -21,6 +22,9 @@ class SelfLearning:
             self.memory.update_memory("notes", self.memory.get_memory("notes") + [f"Неизвестный запрос: {query}"])
             self.learn_parser(query)
             return f"Записал неизвестный запрос и начал обучение парсера: {query}"
+        if "код" in query:
+            self.learn_engine(query)
+            return f"Начал обучение движка на запросе: {query}"
         return "Обучение пока не реализовано."
 
     def learn_parser(self, query):
@@ -50,3 +54,13 @@ class SelfLearning:
             self.memory.update_memory("notes", self.memory.get_memory("notes") + [f"Не удалось обучить парсер на запросе: {query}"])
             return f"Не удалось обучить парсер на запросе: {query}"
         return f"Парсер обучен на запросе: {query}"
+
+    def learn_engine(self, query):
+        if not self.memory:
+            return "Память не установлена."
+        engine = self.memory.get_memory("modules.engine")
+        if not engine:
+            return "Модуль движка не найден."
+        
+        self.memory.update_memory("modules.engine.tasks", self.memory.get_memory("modules.engine.tasks") + [query])
+        return f"Движок обучен на запросе: {query}"

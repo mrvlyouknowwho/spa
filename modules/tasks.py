@@ -1,7 +1,11 @@
 import re
 import random
+from googletrans import Translator
 
 class Tasks:
+    def __init__(self):
+        self.translator = Translator()
+
     def create_calculator(self, expression):
         try:
             expression = expression.replace(" ", "")
@@ -26,3 +30,14 @@ class Tasks:
             return random.randint(1, 100)
         else:
             return "Автоматизация действия пока не реализована."
+
+    def translate_text(self, text, dest_lang="en"):
+        try:
+            translation = self.translator.translate(text, dest=dest_lang)
+            return translation.text
+        except Exception as e:
+            return f"Ошибка перевода: {e}"
+
+    def find_synonyms(self, word):
+        # Здесь будет логика поиска синонимов
+        return "Поиск синонимов пока не реализован."

@@ -114,6 +114,8 @@ class MainWindow(QMainWindow):
             self.create_text_field()
         elif "выпадающий список" in words:
             self.create_combo_box()
+        elif "изменить текст кнопки" in words:
+            self.change_button_text(words)
         else:
             self.result_output.append("Неизвестный запрос интерфейса.\n")
 
@@ -140,6 +142,24 @@ class MainWindow(QMainWindow):
         combo_box.addItems(["Пункт 1", "Пункт 2", "Пункт 3"])
         self.layout.addWidget(combo_box)
         self.result_output.append("Выпадающий список создан.\n")
+
+    def change_button_text(self, words):
+        if len(words) < 5:
+            self.result_output.append("Недостаточно аргументов для изменения текста кнопки.\n")
+            return
+        try:
+            button_index = int(words[3])
+            new_text = " ".join(words[4:])
+            button = self.layout.itemAt(button_index).widget()
+            if isinstance(button, QPushButton):
+                button.setText(new_text)
+                self.result_output.append(f"Текст кнопки {button_index} изменен на '{new_text}'.\n")
+            else:
+                self.result_output.append(f"Элемент {button_index} не является кнопкой.\n")
+        except ValueError:
+            self.result_output.append("Некорректный индекс кнопки.\n")
+        except Exception as e:
+            self.result_output.append(f"Ошибка при изменении текста кнопки: {e}\n")
 
     def handle_file(self, words):
         if "загрузить" in words:
