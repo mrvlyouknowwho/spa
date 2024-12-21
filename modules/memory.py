@@ -117,12 +117,25 @@ class Memory:
           ]
         }
         self.weights = {}
+        self.instructions = {
+            "restore_state": "Для восстановления состояния после перезапуска, загрузите сохраненную память.",
+            "memory_format": "Память хранится в формате JSON.",
+            "weight_algorithm": "Веса элементов памяти динамически изменяются в зависимости от их использования.",
+            "learning_algorithm": "Самообучение происходит на основе данных о взаимодействии с пользователем.",
+            "parser_tasks": "Парсер обучается на новых запросах, которые он не понимает.",
+            "engine_tasks": "Движок обучается на новых данных, которые он получает от пользователя."
+        }
 
     def save_memory(self):
-        return json.dumps(self.data, separators=(',', ':'))
+        memory_data = self.data.copy()
+        memory_data["instructions"] = self.instructions
+        return json.dumps(memory_data, separators=(',', ':'))
 
     def load_memory(self, data):
-        self.data = json.loads(data)
+        loaded_data = json.loads(data)
+        self.data = loaded_data
+        if "instructions" in loaded_data:
+            self.instructions = loaded_data["instructions"]
 
     def update_memory(self, key, value):
         parts = key.split('.')
