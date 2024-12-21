@@ -1,40 +1,32 @@
+import re
+import json
+import os
+
 class Parser:
     def __init__(self):
-        self.memory = None
-        self.context = {}
+        self.history = []
+        self.rules = {}  # Инициализируем rules как пустой словарь
 
-    def set_memory(self, memory):
-        self.memory = memory
+    def parse(self, text):
+        self.history.append(text)
+        text = text.lower()
 
-    def parse_query(self, query):
-        query = query.lower()
-        words = query.split()
-        if "поиск" in words:
-            self.context["last_query_type"] = "поиск"
-            return "поиск", words
-        elif "калькулятор" in words:
-            self.context["last_query_type"] = "калькулятор"
-            return "калькулятор", words
-        elif "код" in words:
-            self.context["last_query_type"] = "код"
-            return "код", words
-        elif "обучение" in words or "python" in words:
-            self.context["last_query_type"] = "обучение"
-            return "обучение", words
-        elif "интерфейс" in words:
-            self.context["last_query_type"] = "интерфейс"
-            return "интерфейс", words
-        elif "файл" in words or "pdf" in words:
-            self.context["last_query_type"] = "файл"
-            return "файл", words
-        elif "память" in words:
-            self.context["last_query_type"] = "память"
-            return "память", words
-        elif "а" in words and self.context.get("last_query_type") == "поиск":
-            return "поиск", words
+        for rule, action in self.rules.items():
+            if re.search(rule, text):
+                return action
+
+        if "создай калькулятор" in text:
+            return "create_calculator"
+        elif "проанализируй свой код" in text:
+            return "analyze_code"
+        elif "обучи меня пайтону" in text:
+            return "learn_python"
         else:
-            return "неизвестно", words
+            return "search_internet"
 
-    def learn_query(self, query, query_type):
-        # Здесь будет логика обучения парсера
-        pass
+    def add_rule(self, rule, action):
+        self.rules[rule] = action
+        # TODO: Реализовать сохранение правил в файл parser_rules.json
+
+    def get_history(self):
+        return self.history
