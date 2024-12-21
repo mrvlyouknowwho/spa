@@ -1,3 +1,5 @@
+import re
+
 class SelfLearning:
     def __init__(self):
         self.memory = None
@@ -17,5 +19,34 @@ class SelfLearning:
         query = last_interaction["query"]
         if "неизвестно" in query:
             self.memory.update_memory("notes", self.memory.get_memory("notes") + [f"Неизвестный запрос: {query}"])
-            return f"Записал неизвестный запрос: {query}"
+            self.learn_parser(query)
+            return f"Записал неизвестный запрос и начал обучение парсера: {query}"
         return "Обучение пока не реализовано."
+
+    def learn_parser(self, query):
+        if not self.memory:
+            return "Память не установлена."
+        parser = self.memory.get_memory("modules.parser")
+        if not parser:
+            return "Модуль парсера не найден."
+        
+        query = query.lower()
+        words = query.split()
+        if "поиск" in words:
+            self.memory.update_memory("modules.parser.tasks", self.memory.get_memory("modules.parser.tasks") + ["поиск"])
+        elif "калькулятор" in words:
+            self.memory.update_memory("modules.parser.tasks", self.memory.get_memory("modules.parser.tasks") + ["калькулятор"])
+        elif "код" in words:
+            self.memory.update_memory("modules.parser.tasks", self.memory.get_memory("modules.parser.tasks") + ["код"])
+        elif "обучение" in words or "python" in words:
+            self.memory.update_memory("modules.parser.tasks", self.memory.get_memory("modules.parser.tasks") + ["обучение"])
+        elif "интерфейс" in words:
+            self.memory.update_memory("modules.parser.tasks", self.memory.get_memory("modules.parser.tasks") + ["интерфейс"])
+        elif "файл" in words or "pdf" in words:
+            self.memory.update_memory("modules.parser.tasks", self.memory.get_memory("modules.parser.tasks") + ["файл"])
+        elif "память" in words:
+            self.memory.update_memory("modules.parser.tasks", self.memory.get_memory("modules.parser.tasks") + ["память"])
+        else:
+            self.memory.update_memory("notes", self.memory.get_memory("notes") + [f"Не удалось обучить парсер на запросе: {query}"])
+            return f"Не удалось обучить парсер на запросе: {query}"
+        return f"Парсер обучен на запросе: {query}"
