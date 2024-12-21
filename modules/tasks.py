@@ -1,15 +1,28 @@
+import re
+import random
+
 class Tasks:
     def create_calculator(self, expression):
         try:
-            result = eval(expression)
-            return result
+            expression = expression.replace(" ", "")
+            if re.match(r"^[0-9+\-*/().]+$", expression):
+                result = eval(expression)
+                return result
+            else:
+                return "Некорректное выражение."
         except Exception as e:
             return f"Ошибка вычисления: {e}"
 
     def analyze_text(self, text):
-        # Здесь будет логика анализа текста
-        return "Анализ текста пока не реализован."
+        words = text.lower().split()
+        word_count = len(words)
+        unique_words = len(set(words))
+        sentences = re.split(r'[.!?]+', text)
+        sentence_count = len(sentences) - 1 if sentences[-1] == '' else len(sentences)
+        return f"Анализ текста:\nСлов: {word_count}\nУникальных слов: {unique_words}\nПредложений: {sentence_count}"
 
     def automate_action(self, action):
-        # Здесь будет логика автоматизации действий
-        return "Автоматизация действий пока не реализована."
+        if action == "случайное число":
+            return random.randint(1, 100)
+        else:
+            return "Автоматизация действия пока не реализована."
