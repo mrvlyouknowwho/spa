@@ -1,6 +1,7 @@
 import ast
 import inspect
 import os
+import hashlib
 
 class SelfAnalysis:
     def __init__(self):
@@ -25,6 +26,7 @@ class SelfAnalysis:
             tree = ast.parse(code)
             errors = []
             suggestions = []
+            hashes = {}
             for node in ast.walk(tree):
                 if isinstance(node, ast.FunctionDef):
                     if len(node.body) == 0:
@@ -33,6 +35,14 @@ class SelfAnalysis:
                         errors.append(f"Функция {node.name} не инициализирует self.memory.")
                     if node.name.startswith("handle_") and not any(isinstance(n, ast.Expr) and isinstance(n.value, ast.Call) and isinstance(n.value.func, ast.Attribute) and n.value.func.attr == "append" for n in node.body):
                         suggestions.append(f"Функция {node.name} не выводит результат.")
+                    code_hash = hashlib.sha256(ast.unparse(node).encode()).hexdigest()
+                    if code_hash in hashes:
+                        suggestions.append(f"Функция {node.name} дублирует код функции {hashes[code_hash]}.")
+                    else:
+                        hashes[code_hash] = node.name
+                if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Store):
+                    if node.id.startswith("_"):
+                        suggestions.append(f"Переменная {node.id} начинается с '_', что может указывать на неиспользуемую переменную.")
             if errors:
                 return f"Обнаружены ошибки в коде:\n{', '.join(errors)}\nПредложения:\n{', '.join(suggestions)}"
             elif suggestions:

@@ -176,6 +176,13 @@ class Memory:
         for k in self.weights:
             if k != key:
                 self.weights[k] *= 0.9
+        self.normalize_weights()
 
     def get_weight(self, key):
         return self.weights.get(key, 0.1)
+
+    def normalize_weights(self):
+        total_weight = sum(self.weights.values())
+        if total_weight > 0:
+            for key in self.weights:
+                self.weights[key] /= total_weight
