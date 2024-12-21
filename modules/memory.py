@@ -1,4 +1,5 @@
 import json
+import random
 
 class Memory:
     def __init__(self):
@@ -114,6 +115,7 @@ class Memory:
             "Необходимо добавить поддержку других языков программирования"
           ]
         }
+        self.weights = {}
 
     def save_memory(self):
         return json.dumps(self.data, separators=(',', ':'))
@@ -129,6 +131,7 @@ class Memory:
                 current[part] = {}
             current = current[part]
         current[parts[-1]] = value
+        self.update_weights(key)
 
     def get_memory(self, key):
         parts = key.split('.')
@@ -146,16 +149,16 @@ class Memory:
                 for key, value in data.items():
                     new_path = f"{path}.{key}" if path else key
                     if query.lower() in str(key).lower() or query.lower() in str(value).lower():
-                        results.append({"path": new_path, "value": value})
+                        results.append({"path": new_path, "value": value, "weight": self.get_weight(new_path)})
                     recursive_search(value, new_path)
             elif isinstance(data, list):
                 for i, item in enumerate(data):
                     new_path = f"{path}[{i}]"
                     if query.lower() in str(item).lower():
-                        results.append({"path": new_path, "value": item})
+                        results.append({"path": new_path, "value": item, "weight": self.get_weight(new_path)})
                     recursive_search(item, new_path)
         recursive_search(self.data)
-        return results
+        return sorted(results, key=lambda x: x["weight"], reverse=True)
 
     def analyze_memory(self):
         # Здесь будет логика анализа памяти
@@ -164,3 +167,14 @@ class Memory:
     def plan_actions(self):
         # Здесь будет логика планирования действий
         return "Планирование действий пока не реализовано."
+
+    def update_weights(self, key):
+        if key not in self.weights:
+            self.weights[key] = 0.5
+        self.weights[key] += random.uniform(0.1, 0.3)
+        for k in self.weights:
+            if k != key:
+                self.weights[k] *= 0.9
+
+    def get_weight(self, key):
+        return self.weights.get(key, 0.1)
