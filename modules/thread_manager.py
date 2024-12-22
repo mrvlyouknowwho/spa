@@ -1,3 +1,4 @@
+# modules/thread_manager.py
 from PyQt6.QtCore import QThread, pyqtSignal
 from modules.search import Search
 from modules.tasks import Tasks

@@ -1,8 +1,9 @@
+# modules/gui.py
 from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout,
                              QLineEdit, QPushButton, QTextEdit, QMessageBox,
                              QComboBox, QLabel, QProgressBar, QHBoxLayout,
                              QApplication)
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QClipboard
 from modules.parser import Parser
 from modules.search import Search
@@ -37,29 +38,13 @@ class OutputWidget(QTextEdit):
         super().__init__()
         self.setReadOnly(True)
 
-class DebugWidget(QTextEdit):
-  def __init__(self, main_window):
-        super().__init__()
-        self.main_window = main_window
-        self.setReadOnly(True)
-        
-        copy_button = QPushButton("Копировать дебаг")
-        copy_button.clicked.connect(self.copy_debug_text)
-        
-        layout = QVBoxLayout()
-        layout.addWidget(self)
-        layout.addWidget(copy_button)
-        self.setLayout(layout)
-  
-  def copy_debug_text(self):
-        clipboard = QApplication.clipboard()
-        clipboard.setText(self.toPlainText())
-
 class FeedbackButton(QPushButton):
     def __init__(self, main_window):
+        print("FeedbackButton: Инициализация - Начало")
         super().__init__("Оценить результат")
         self.main_window = main_window
         self.clicked.connect(self.main_window.give_feedback)
+        print("FeedbackButton: Инициализация - Конец")
         
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -73,55 +58,67 @@ class MainWindow(QMainWindow):
         print("MainWindow: Инициализирован Config")
         self.logger = Logger(self.config)
         print("MainWindow: Инициализирован Logger")
-        self.memory = Memory()
-        print("MainWindow: Инициализирован Memory")
-        self.thread_manager = ThreadManager(self._debug)
-        print("MainWindow: Инициализирован ThreadManager")
-        self.app_manager = AppManager(self.memory, self._debug)
-        print("MainWindow: Инициализирован AppManager")
+        try:
+            print("MainWindow: Инициализация Memory - Начало")
+            self.memory = Memory()
+            print("MainWindow: Инициализирован Memory - Конец")
+            print("MainWindow: Инициализация ThreadManager - Начало")
+            self.thread_manager = ThreadManager(self._debug)
+            print("MainWindow: Инициализирован ThreadManager - Конец")
+            print("MainWindow: Инициализация AppManager - Начало")
+            self.app_manager = AppManager(self.memory, self._debug)
+            print("MainWindow: Инициализирован AppManager - Конец")
 
-        self.central_widget = QWidget()
-        print("MainWindow: Создание central_widget")
-        self.setCentralWidget(self.central_widget)
-        print("MainWindow: Установка central_widget")
-        self.layout = QVBoxLayout(self.central_widget)
-        print("MainWindow: Создание layout")
+            self.central_widget = QWidget()
+            print("MainWindow: Создание central_widget")
+            self.setCentralWidget(self.central_widget)
+            print("MainWindow: Установка central_widget")
+            self.layout = QVBoxLayout(self.central_widget)
+            print("MainWindow: Создание layout")
         
-        # Input
-        # self.input_widget = InputWidget(self)
-        # print("MainWindow: Инициализирован InputWidget")
-        # self.layout.addWidget(self.input_widget)
-        # print("MainWindow: Добавлен InputWidget")
+            # Input
+            self.input_widget = InputWidget(self)
+            print("MainWindow: Инициализирован InputWidget")
+            self.layout.addWidget(self.input_widget)
+            print("MainWindow: Добавлен InputWidget")
         
-        self.progress_bar = QProgressBar()
-        print("MainWindow: Инициализирован Progressbar")
-        self.progress_bar.setValue(0)
-        self.layout.addWidget(self.progress_bar)
-        print("MainWindow: Добавлен Progressbar")
+            self.progress_bar = QProgressBar()
+            print("MainWindow: Инициализирован Progressbar")
+            self.progress_bar.setValue(0)
+            self.layout.addWidget(self.progress_bar)
+            print("MainWindow: Добавлен Progressbar")
 
-        self.result_output = OutputWidget()
-        print("MainWindow: Инициализирован OutputWidget")
-        self.layout.addWidget(self.result_output)
-        print("MainWindow: Добавлен OutputWidget")
-        
-        # self.debug_output = DebugWidget(self)
-        # print("MainWindow: Инициализирован DebugWidget")
-        # self.layout.addWidget(self.debug_output)
-        # print("MainWindow: Добавлен DebugWidget")
-        
-        # self.feedback_button = FeedbackButton(self)
-        # print("MainWindow: Инициализирован FeedbackButton")
-        # self.layout.addWidget(self.feedback_button)
-        # print("MainWindow: Добавлен FeedbackButton")
-        self.last_query = None
-        # self.load_state()
-        print("MainWindow: Инициализация - Конец")
-        self.show()
-        print("MainWindow: Показано окно")
-        
+            self.result_output = OutputWidget()
+            print("MainWindow: Инициализирован OutputWidget")
+            self.layout.addWidget(self.result_output)
+            print("MainWindow: Добавлен OutputWidget")
+            
+            try:
+                
+               self.feedback_button = FeedbackButton(self)
+               print("MainWindow: Инициализирован FeedbackButton")
+               self.layout.addWidget(self.feedback_button)
+               print("MainWindow: Добавлен FeedbackButton")
+            except Exception as e:
+                print(f"MainWindow: Ошибка инициализации FeedbackButton: {e}")
+                self.logger.error(f"MainWindow: Ошибка инициализации FeedbackButton: {e}")
+            
+            self.last_query = None
+            self.load_state()
+            print("MainWindow: Инициализация - Конец")
+            self.show()
+            print("MainWindow: Показано окно")
+            print("MainWindow: Приложение запущено")
+        except Exception as e:
+            print(f"MainWindow: Ошибка инициализации: {e}")
+            self.logger.error(f"MainWindow: Ошибка инициализации: {e}")
+            QMessageBox.critical(self, "Ошибка инициализации", f"Произошла ошибка при инициализации приложения: {e}")
+            self.close()
+            
     def closeEvent(self, event):
         self.save_state()
-        self.memory.db.close()
+        if hasattr(self, 'memory') and self.memory.db:
+             self.memory.db.close()
         event.accept()
 
     def execute_query(self):
@@ -261,46 +258,79 @@ class MainWindow(QMainWindow):
             self._debug(f"GUI: save_file: Файл сохранен в {result}.\n", 'gui')
 
     def save_memory(self):
+      try:
         memory_data = self.memory.save_memory()
         self.result_output.append(f"Память сохранена:\n{memory_data}\n")
         self._debug(f"GUI: handle_memory: Память сохранена:\n{memory_data}\n", 'gui')
+      except Exception as e:
+        self.result_output.append(f"Ошибка сохранения памяти: {e}\n")
+        self._debug(f"GUI: handle_memory: Ошибка сохранения памяти: {e}\n", 'gui')
 
     def load_memory(self):
-      self._debug(f"GUI: load_memory: Загрузка памяти начата", 'gui')
-      # Здесь будет логика загрузки памяти
-      self.result_output.append("Загрузка памяти пока не реализована.\n")
-      self._debug(f"GUI: handle_memory: Загрузка памяти пока не реализована.\n", 'gui')
+      try:
+        self._debug(f"GUI: load_memory: Загрузка памяти начата", 'gui')
+        self.memory._load_initial_data()
+        self.result_output.append("Память загружена.\n")
+        self._debug(f"GUI: handle_memory: Память загружена.\n", 'gui')
+      except Exception as e:
+        self.result_output.append(f"Ошибка загрузки памяти: {e}\n")
+        self._debug(f"GUI: handle_memory: Ошибка загрузки памяти: {e}\n", 'gui')
+
 
     def search_memory(self, query):
+      try:
         results = self.memory.search_memory(query)
         self.result_output.append(f"Результаты поиска в памяти:\n{results}\n")
         self._debug(f"GUI: handle_memory: Результаты поиска в памяти:\n{results}\n", 'gui')
+      except Exception as e:
+        self.result_output.append(f"Ошибка поиска в памяти: {e}\n")
+        self._debug(f"GUI: handle_memory: Ошибка поиска в памяти: {e}\n", 'gui')
 
     def analyze_memory(self):
+      try:
         analysis = self.memory.analyze_memory()
         self.result_output.append(f"Анализ памяти:\n{analysis}\n")
         self._debug(f"GUI: handle_memory: Анализ памяти:\n{analysis}\n", 'gui')
+      except Exception as e:
+         self.result_output.append(f"Ошибка анализа памяти: {e}\n")
+         self._debug(f"GUI: handle_memory: Ошибка анализа памяти: {e}\n", 'gui')
 
     def plan_memory(self):
-        plan = self.memory.plan_actions()
-        self.result_output.append(f"План действий:\n{plan}\n")
-        self._debug(f"GUI: handle_memory: План действий:\n{plan}\n", 'gui')
+      try:
+         plan = self.memory.plan_actions()
+         self.result_output.append(f"План действий:\n{plan}\n")
+         self._debug(f"GUI: handle_memory: План действий:\n{plan}\n", 'gui')
+      except Exception as e:
+          self.result_output.append(f"Ошибка планирования памяти: {e}\n")
+          self._debug(f"GUI: handle_memory: Ошибка планирования памяти: {e}\n", 'gui')
 
     def update_memory(self, key, value):
-      self.memory.update_memory(key, value)
-      self.result_output.append(f"Память обновлена: {key} = {value}\n")
-      self._debug(f"GUI: handle_memory: Память обновлена: {key} = {value}\n", 'gui')
+      try:
+        self.memory.update_memory(key, value)
+        self.result_output.append(f"Память обновлена: {key} = {value}\n")
+        self._debug(f"GUI: handle_memory: Память обновлена: {key} = {value}\n", 'gui')
+      except Exception as e:
+        self.result_output.append(f"Ошибка обновления памяти: {e}\n")
+        self._debug(f"GUI: handle_memory: Ошибка обновления памяти: {e}\n", 'gui')
 
     def get_memory(self, key):
-      value = self.memory.get_memory(key)
-      self.result_output.append(f"Значение из памяти: {key} = {value}\n")
-      self._debug(f"GUI: handle_memory: Значение из памяти: {key} = {value}\n", 'gui')
+      try:
+        value = self.memory.get_memory(key)
+        self.result_output.append(f"Значение из памяти: {key} = {value}\n")
+        self._debug(f"GUI: handle_memory: Значение из памяти: {key} = {value}\n", 'gui')
+      except Exception as e:
+        self.result_output.append(f"Ошибка получения значения из памяти: {e}\n")
+        self._debug(f"GUI: handle_memory: Ошибка получения значения из памяти: {e}\n", 'gui')
 
     def clear_memory(self):
-        self.memory.db.clear()
-        self.memory._load_initial_data()
-        self.result_output.append(f"Память очищена.\n")
-        self._debug(f"GUI: handle_memory: Память очищена.\n", 'gui')
+        try:
+            self.memory.db.clear()
+            self.memory._load_initial_data()
+            self.result_output.append(f"Память очищена.\n")
+            self._debug(f"GUI: handle_memory: Память очищена.\n", 'gui')
+        except Exception as e:
+          self.result_output.append(f"Ошибка очистки памяти: {e}\n")
+          self._debug(f"GUI: handle_memory: Ошибка очистки памяти: {e}\n", 'gui')
     
     def give_feedback(self):
       feedback =  QMessageBox.question(self, "Оцените результат", "Как вы оцениваете результат?", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
@@ -315,14 +345,23 @@ class MainWindow(QMainWindow):
 
     def save_state(self):
       self._debug(f"GUI: save_state: Сохраняю состояние", 'gui')
-      self.app_manager.handle_memory(["память", "сохранить"])
-      self._debug(f"GUI: save_state: Состояние сохранено", 'gui')
+      try:
+        self.app_manager.handle_memory(["память", "сохранить"])
+        self._debug(f"GUI: save_state: Состояние сохранено", 'gui')
+      except Exception as e:
+        self._debug(f"GUI: save_state: Ошибка сохранения состояния: {e}", 'gui')
+        self.result_output.append(f"Ошибка сохранения состояния: {e}\n")
       
     def load_state(self):
       self._debug(f"GUI: load_state: Загружаю состояние", 'gui')
-      self.memory._load_initial_data()
-      self._debug(f"GUI: load_state: Состояние загружено", 'gui')
+      try:
+        self.memory._load_initial_data()
+        self._debug(f"GUI: load_state: Состояние загружено", 'gui')
+      except Exception as e:
+          self._debug(f"GUI: load_state: Ошибка загрузки состояния: {e}", 'gui')
+          self.result_output.append(f"Ошибка загрузки состояния: {e}\n")
 
     def _debug(self, message, module=None):
       self.logger.debug(message)
-      self.debug_output.append(f"{message}\n")
+      if hasattr(self, 'debug_output') and self.debug_output:
+        self.debug_output.append(f"{message}\n")

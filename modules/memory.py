@@ -1,3 +1,4 @@
+# modules/memory.py
 import json
 import random
 import heapq
@@ -7,11 +8,12 @@ from modules.database import DatabaseManager
 
 class Memory:
     def __init__(self):
+        print("Memory: Инициализация")
         self.db = DatabaseManager()
         self.data = {}
         self.instructions = self._load_instructions()
-        self._load_initial_data()
-      
+        # self._load_initial_data() # Перенесено в load_state() в gui.py
+    
     def _load_instructions(self):
         instructions = {
             "restore_state": "Для восстановления состояния после перезапуска, загрузите сохраненную память.",
@@ -24,6 +26,7 @@ class Memory:
         return instructions
       
     def _load_initial_data(self):
+      print("Memory: Загрузка начальных данных")
       initial_data = {
           "project_name": "Самообучающийся Персональный Ассистент (СПА)",
           "project_goal": "Создание полностью независимого ИИ, который превзойдет начальную модель и заменит ее.",
@@ -36,14 +39,38 @@ class Memory:
             "gui_working": True,
             "basic_functionality": True,
             "self_learning_started": False
-          }
+          },
+          "modules": {
+            "parser": {
+                "tasks": [],
+                "rules": {}
+            },
+            "engine": {
+                "tasks": []
+            }
+        },
+        "past_actions": [],
+        "notes": []
         }
       self.data = initial_data
-      
+      try:
+        loaded_data = self.db.load_data("memory_state")
+        if loaded_data:
+          self.data = loaded_data
+          print("Memory: Начальные данные загружены из базы данных.")
+        else:
+          print("Memory: Начальные данные загружены из кода.")
+      except Exception as e:
+         print(f"Memory: Ошибка загрузки начальных данных: {e}")
+
     def save_memory(self):
-       for key, value in self.data.items():
-           self.db.save_data(key, value)
-       return json.dumps(self.data, separators=(',', ':'))
+      try:
+        self.db.save_data("memory_state", self.data)
+        print("Memory: Память сохранена в базу данных.")
+        return json.dumps(self.data, separators=(',', ':'))
+      except Exception as e:
+        print(f"Memory: Ошибка сохранения памяти: {e}")
+        return None
        
     def add_past_action(self, timestamp, action, result):
       self.db.add_past_action(timestamp, action, result)
@@ -59,14 +86,17 @@ class Memory:
                 current[part] = {}
             current = current[part]
         current[parts[-1]] = value
+        print(f"Memory: Обновлена память: {key} = {value}")
     
     def get_memory(self, key):
       parts = key.split('.')
       current = self.data
       for part in parts:
         if part not in current:
+          print(f"Memory: Ключ не найден: {key}")
           return None
         current = current[part]
+      print(f"Memory: Получено значение из памяти: {key}")
       return current
 
     def search_memory(self, query):
@@ -85,12 +115,15 @@ class Memory:
                 results.append({"path": new_path, "value": item, "weight": self.get_weight(new_path)})
               recursive_search(item, new_path)
       recursive_search(self.data)
+      print(f"Memory: Поиск в памяти: {query}, найдено {len(results)} результатов.")
       return sorted(results, key=lambda x: x["weight"], reverse=True)
 
     def analyze_memory(self):
+      print("Memory: Анализ памяти пока не реализован.")
       return "Анализ памяти пока не реализован."
 
     def plan_actions(self):
+        print("Memory: Планирование действий пока не реализовано.")
         return "Планирование действий пока не реализовано."
 
     def update_weights(self, key):

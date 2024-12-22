@@ -1,3 +1,4 @@
+# modules/self_analysis.py
 import ast
 import inspect
 import os
@@ -5,15 +6,21 @@ import hashlib
 
 class SelfAnalysis:
     def __init__(self):
+        print("SelfAnalysis: Инициализация")
         self.memory = None
         self.user_interactions = []
 
     def set_memory(self, memory):
-        self.memory = memory
+      print("SelfAnalysis: Установка памяти.")
+      self.memory = memory
 
     def record_interaction(self, query, result):
+        print(f"SelfAnalysis: Запись взаимодействия: запрос='{query}', результат='{result}'")
         self.user_interactions.append({"query": query, "result": result})
-        self.memory.update_memory("past_actions", self.user_interactions)
+        if self.memory:
+            self.memory.update_memory("past_actions", self.user_interactions)
+        else:
+            print("SelfAnalysis: Память не установлена, запись взаимодействия невозможна.")
 
     def analyze(self, module_name="self"):
         try:
@@ -44,17 +51,28 @@ class SelfAnalysis:
                     if node.id.startswith("_"):
                         suggestions.append(f"Переменная {node.id} начинается с '_', что может указывать на неиспользуемую переменную.")
             if errors:
-                return f"Обнаружены ошибки в коде:\n{', '.join(errors)}\nПредложения:\n{', '.join(suggestions)}"
+              print(f"SelfAnalysis: Обнаружены ошибки: {errors}, предложения: {suggestions}")
+              return f"Обнаружены ошибки в коде:\n{', '.join(errors)}\nПредложения:\n{', '.join(suggestions)}"
             elif suggestions:
-                return f"Код не содержит ошибок, но есть предложения:\n{', '.join(suggestions)}"
+              print(f"SelfAnalysis: Код не содержит ошибок, но есть предложения: {suggestions}")
+              return f"Код не содержит ошибок, но есть предложения:\n{', '.join(suggestions)}"
             else:
+                print(f"SelfAnalysis: Код не содержит ошибок и предложений")
                 return "Код не содержит ошибок и предложений."
         except FileNotFoundError:
+            print(f"SelfAnalysis: Модуль не найден: {module_name}")
             return f"Модуль {module_name} не найден."
         except Exception as e:
-            return f"Ошибка при анализе кода: {e}"
+          print(f"SelfAnalysis: Ошибка анализа кода: {e}")
+          return f"Ошибка при анализе кода: {e}"
 
     def get_feedback(self, feedback):
-        # Здесь будет логика обработки обратной связи
-        self.memory.update_memory("notes", self.memory.get_memory("notes") + [feedback])
+      print(f"SelfAnalysis: Получена обратная связь: {feedback}")
+      if self.memory:
+        notes = self.memory.get_memory("notes") if self.memory.get_memory("notes") else []
+        self.memory.update_memory("notes", notes + [feedback])
+        print(f"SelfAnalysis: Обратная связь записана в память: {feedback}")
         return "Обратная связь получена."
+      else:
+        print("SelfAnalysis: Память не установлена, обратная связь не может быть записана.")
+        return "Обратная связь получена, но память не установлена."

@@ -1,3 +1,4 @@
+# modules/app_manager.py
 import datetime
 from modules.parser import Parser
 from modules.search import Search
@@ -10,21 +11,27 @@ from modules.memory import Memory
 class AppManager:
     def __init__(self, memory, debug_callback):
         print("AppManager: Инициализация - Начало")
-        self.memory = Memory()
+        self.memory = memory # Используем переданный объект memory
         print("AppManager: Инициализирована Memory")
+        print("AppManager: Инициализация Parser - Начало")
         self.parser = Parser()
-        print("AppManager: Инициализирован Parser")
+        print("AppManager: Инициализирован Parser - Конец")
+        print("AppManager: Инициализация Search - Начало")
         self.search = Search()
-        print("AppManager: Инициализирован Search")
+        print("AppManager: Инициализирован Search - Конец")
+        print("AppManager: Инициализация Engine - Начало")
         self.engine = Engine()
-        print("AppManager: Инициализирован Engine")
+        print("AppManager: Инициализирован Engine - Конец")
+        print("AppManager: Инициализация Tasks - Начало")
         self.tasks = Tasks()
-        print("AppManager: Инициализирован Tasks")
+        print("AppManager: Инициализирован Tasks - Конец")
+        print("AppManager: Инициализация SelfAnalysis - Начало")
         self.self_analysis = SelfAnalysis()
-        print("AppManager: Инициализирован SelfAnalysis")
+        print("AppManager: Инициализирован SelfAnalysis - Конец")
         self.self_analysis.set_memory(self.memory)
+        print("AppManager: Инициализация Files - Начало")
         self.files = Files()
-        print("AppManager: Инициализирован Files")
+        print("AppManager: Инициализирован Files - Конец")
         self.debug_callback = debug_callback
         print("AppManager: Инициализация - Конец")
     
