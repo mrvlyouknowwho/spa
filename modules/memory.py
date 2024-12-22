@@ -83,7 +83,7 @@ class Memory:
        
     def record_interaction(self, query, result, error=None):
       timestamp = str(datetime.datetime.now())
-      self.db.add_past_action(timestamp, query, result)
+      self.db.add_past_action(timestamp, query, result, error)
       past_actions = self.get_past_actions()
       self.update_memory("past_actions", past_actions + [{"timestamp":timestamp, "query":query, "result":result, "error":error}])
       
@@ -135,10 +135,67 @@ class Memory:
     def analyze_memory(self):
       print("Memory: Анализ памяти пока не реализован.")
       return "Анализ памяти пока не реализован."
-
+    
     def plan_actions(self):
         print("Memory: Планирование действий пока не реализовано.")
-        return "Планирование действий пока не реализовано."
+        
+        if not self.data or not isinstance(self.data, dict):
+            print("Memory: Нет данных для планирования.")
+            return "Нет данных для планирования."
+        
+        past_actions = self.get_memory("past_actions")
+        if not past_actions:
+           print("Memory: Нет действий для планирования.")
+           return "Нет действий для планирования."
+        
+        
+        plan = {
+           "components": [],
+           "layout": {
+              "type": "vertical"
+           }
+        }
+        
+        if "поиск" in past_actions[-1]["query"]:
+            plan["components"].append({"type": "text_field"})
+            plan["components"].append({"type": "input_field", "placeholder": "Введите запрос"})
+            plan["components"].append({"type": "button", "text": "Искать"})
+        elif "калькулятор" in past_actions[-1]["query"]:
+            plan["components"].append({"type": "text_field"})
+            plan["components"].append({"type": "input_field", "placeholder": "Введите выражение"})
+            plan["components"].append({"type": "button", "text": "Вычислить"})
+        elif "обучение" in past_actions[-1]["query"]:
+            plan["components"].append({"type": "text_field"})
+            plan["components"].append({"type": "input_field", "placeholder": "Введите запрос на обучение"})
+            plan["components"].append({"type": "button", "text": "Обучить"})
+        elif "интерфейс" in past_actions[-1]["query"]:
+            plan["components"].append({"type": "text_field"})
+            plan["components"].append({"type": "button", "text": "Создать кнопку"})
+            plan["components"].append({"type": "button", "text": "Создать поле ввода"})
+            plan["components"].append({"type": "button", "text": "Создать текстовое поле"})
+            plan["components"].append({"type": "button", "text": "Создать выпадающий список"})
+        elif "файл" in past_actions[-1]["query"]:
+           plan["components"].append({"type": "text_field"})
+           plan["components"].append({"type": "button", "text": "Загрузить файл"})
+           plan["components"].append({"type": "button", "text": "Сохранить файл"})
+        elif "память" in past_actions[-1]["query"]:
+           plan["components"].append({"type": "text_field"})
+           plan["components"].append({"type": "button", "text": "Сохранить память"})
+           plan["components"].append({"type": "button", "text": "Загрузить память"})
+           plan["components"].append({"type": "button", "text": "Поиск в памяти"})
+           plan["components"].append({"type": "button", "text": "Анализ памяти"})
+           plan["components"].append({"type": "button", "text": "План действий"})
+           plan["components"].append({"type": "button", "text": "Обновить память"})
+           plan["components"].append({"type": "button", "text": "Получить из памяти"})
+           plan["components"].append({"type": "button", "text": "Очистить память"})
+        else:
+           plan["components"].append({"type": "text_field"})
+           plan["components"].append({"type": "button", "text": "Неизвестный запрос"})
+        
+        self.update_plan(plan)
+        
+        return plan
+
     
     def update_plan(self, plan):
       self.update_memory("plans.current", plan)

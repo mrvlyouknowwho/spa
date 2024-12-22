@@ -3,6 +3,7 @@ import ast
 import inspect
 import os
 import hashlib
+import re
 
 class SelfAnalysis:
     def __init__(self):
@@ -74,3 +75,36 @@ class SelfAnalysis:
       else:
         print("SelfAnalysis: Память не установлена, обратная связь не может быть записана.")
         return "Обратная связь получена, но память не установлена."
+
+    def suggest_refactoring(self, module_name="self"):
+        try:
+          if module_name == "self":
+                file_path = "modules/self_analysis.py"
+          else:
+                file_path = f"modules/{module_name}.py"
+          with open(file_path, "r", encoding="utf-8") as f:
+            code = f.read()
+          tree = ast.parse(code)
+          suggestions = []
+          for node in ast.walk(tree):
+              if isinstance(node, ast.FunctionDef):
+                docstring = ast.get_docstring(node)
+                if not docstring:
+                    suggestions.append(f"Функции '{node.name}' не хватает docstring.")
+                if len(node.body) > 20:
+                  suggestions.append(f"Функция '{node.name}' слишком длинная, рассмотрите возможность разбить ее на несколько более мелких.")
+                for arg in node.args.args:
+                  if re.match(r'^[a-z_]+$', arg.arg) is None:
+                    suggestions.append(f"Аргумент '{arg.arg}' функции '{node.name}' не соответствует snake_case.")
+          if suggestions:
+            print(f"SelfAnalysis: Предложения по рефакторингу: {suggestions}")
+            return f"Предложения по рефакторингу:\n{', '.join(suggestions)}"
+          else:
+                print(f"SelfAnalysis: Рефакторинг не требуется.")
+                return "Рефакторинг не требуется."
+        except FileNotFoundError:
+            print(f"SelfAnalysis: Модуль не найден: {module_name}")
+            return f"Модуль {module_name} не найден."
+        except Exception as e:
+          print(f"SelfAnalysis: Ошибка рефакторинга: {e}")
+          return f"Ошибка при рефакторинге кода: {e}"

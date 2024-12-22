@@ -3,24 +3,31 @@ import requests
 from bs4 import BeautifulSoup
 import requests.exceptions
 import socket
+from config import Config
 
 class Search:
     def __init__(self):
         print("Search: Инициализация")
+        self.config = Config()
         self.headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
         }
         self.search_engines = {
           "duckduckgo": "https://duckduckgo.com/?q={query}",
-          "google" : "https://www.google.com/search?q={query}"
+          "google" : "https://www.google.com/search?q={query}",
+          "bing": "https://www.bing.com/search?q={query}"
         }
         self.current_engine = "duckduckgo"
+    
     def check_internet_connection(self):
-        try:
-            socket.create_connection(("www.google.com", 80), timeout=5)
-            return True
-        except OSError:
-            return False
+        for url in self.config.internet_check_urls:
+            try:
+                response = requests.get(url, timeout=5)
+                response.raise_for_status()
+                return True
+            except requests.exceptions.RequestException:
+                continue
+        return False
 
     def set_search_engine(self, engine_name):
         if engine_name in self.search_engines:
@@ -39,13 +46,15 @@ class Search:
             response = requests.get(search_url, headers=self.headers, timeout=10)
             response.raise_for_status()
             soup = BeautifulSoup(response.content, 'html.parser')
-            links = soup.find_all('a', class_='result__a' if self.current_engine == "duckduckgo" else "yuRUbf")
+            links = soup.find_all('a', class_='result__a' if self.current_engine == "duckduckgo" else "yuRUbf" if self.current_engine == "google" else "b_algo")
             results = []
             for link in links[:5]:
                if self.current_engine == "duckduckgo":
                   results.append({"title": link.text, "url": link['href']})
-               else:
+               elif self.current_engine == "google":
                  results.append({"title": link.find('h3').text if link.find('h3') else link.text , "url": link.get('href')})
+               elif self.current_engine == "bing":
+                 results.append({"title": link.find('h2').text if link.find('h2') else link.text, "url": link.get('href')})
             if not results:
               print(f"Search: Поиск не дал результатов.")
               return f"Поиск не дал результатов.", "Ошибка поиска"

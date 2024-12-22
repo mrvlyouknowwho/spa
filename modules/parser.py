@@ -2,16 +2,52 @@
 import re
 import json
 import os
+import nltk
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
+from config import Config
+from transformers import pipeline
 
 class Parser:
-    def __init__(self):
+    def __init__(self, memory):
         print("Parser: Инициализация")
+        self.memory = memory
         self.history = []
         self.rules = self.load_rules()
-
+        self.config = Config()
+        try:
+           nltk.data.find("tokenizers/punkt")
+        except LookupError:
+            print("Parser: Загрузка punkt tokenizer")
+            nltk.download('punkt', quiet=True)
+        try:
+            nltk.data.find("corpora/stopwords")
+        except LookupError:
+            print("Parser: Загрузка stopwords")
+            nltk.download('stopwords', quiet=True)
+        self.stop_words = set(stopwords.words('russian'))
+        self.nlp_pipeline = pipeline("text-classification", model=self.config.nlp_model_name)
+    
+    def preprocess_text(self, text):
+        text = text.lower()
+        tokens = word_tokenize(text)
+        tokens = [word for word in tokens if word.isalpha() and word not in self.stop_words]
+        return " ".join(tokens)
+    
+    def analyze_sentiment(self, text):
+      try:
+        result = self.nlp_pipeline(text)[0]
+        return result['label'], result['score']
+      except Exception as e:
+        print(f"Parser: Ошибка анализа тональности {e}")
+        return None, None
+    
     def parse_query(self, text):
         print(f"Parser: Парсинг запроса: {text}")
         self.history.append(text)
+        preprocessed_text = self.preprocess_text(text)
+        sentiment, score = self.analyze_sentiment(text)
+        print(f"Parser: Тональность: {sentiment}, Оценка: {score}")
         text = text.lower()
         
         for rule, action in self.rules.items():

@@ -1,11 +1,13 @@
 # modules/self_learning.py
 import re
 import random
+from modules.search import Search
 
 class SelfLearning:
     def __init__(self):
       print("SelfLearning: Инициализация")
       self.memory = None
+      self.search = Search()
 
     def set_memory(self, memory):
         print("SelfLearning: Установка памяти")
@@ -22,7 +24,7 @@ class SelfLearning:
             return "Нет данных для обучения."
 
         last_interaction = past_actions[-1]
-        query = last_interaction["query"]
+        query = last_interaction["action"]
         result, error = last_interaction.get("result"), last_interaction.get("error")
         
         if error:
@@ -45,6 +47,14 @@ class SelfLearning:
             print(f"SelfLearning: Начал обучение движка на запросе: {query}")
             self.learn_engine(query)
             return f"Начал обучение движка на запросе: {query}"
+        
+        if result == "OK":
+           notes = self.memory.get_memory("notes") if self.memory.get_memory("notes") else []
+           self.memory.update_memory("notes", notes + [f"Успешное выполнение запроса: {query}"])
+           print(f"SelfLearning: Записал успешное выполнение запроса: {query}")
+           self.learn_memory(query)
+           return f"Записал успешное выполнение запроса и начал обучение: {query}"
+        
         print("SelfLearning: Обучение пока не реализовано.")
         return "Обучение пока не реализовано."
 
@@ -135,13 +145,27 @@ class SelfLearning:
            notes = self.memory.get_memory("notes") if self.memory.get_memory("notes") else []
            self.memory.update_memory("notes", notes + [f"Ошибка поиска: нет подключения к интернету"])
            print(f"SelfLearning: Записал ошибку поиска: нет подключения к интернету.")
+           
            search = self.memory.get_memory("modules.search")
            if search:
-               search.set_search_engine("google")
-               self.memory.update_memory("modules.search", search)
-               notes = self.memory.get_memory("notes") if self.memory.get_memory("notes") else []
-               self.memory.update_memory("notes", notes + [f"Поменял поисковую систему на google."])
-               print("SelfLearning: Поменял поисковую систему на google")
+               if search.current_engine == "duckduckgo":
+                 search.set_search_engine("google")
+                 self.memory.update_memory("modules.search", search)
+                 notes = self.memory.get_memory("notes") if self.memory.get_memory("notes") else []
+                 self.memory.update_memory("notes", notes + [f"Поменял поисковую систему на google."])
+                 print("SelfLearning: Поменял поисковую систему на google")
+               elif search.current_engine == "google":
+                 search.set_search_engine("bing")
+                 self.memory.update_memory("modules.search", search)
+                 notes = self.memory.get_memory("notes") if self.memory.get_memory("notes") else []
+                 self.memory.update_memory("notes", notes + [f"Поменял поисковую систему на bing."])
+                 print("SelfLearning: Поменял поисковую систему на bing")
+               elif search.current_engine == "bing":
+                 search.set_search_engine("duckduckgo")
+                 self.memory.update_memory("modules.search", search)
+                 notes = self.memory.get_memory("notes") if self.memory.get_memory("notes") else []
+                 self.memory.update_memory("notes", notes + [f"Поменял поисковую систему на duckduckgo."])
+                 print("SelfLearning: Поменял поисковую систему на duckduckgo")
            else:
                 print("SelfLearning: Модуль поиска не найден, обучение невозможно.")
                 return "Модуль поиска не найден."
@@ -160,3 +184,50 @@ class SelfLearning:
            else:
                 print("SelfLearning: Модуль парсера не найден, обучение невозможно.")
                 return "Модуль парсера не найден."
+    
+    def learn_memory(self, query):
+        if not self.memory:
+            print("SelfLearning: Память не установлена, обучение памяти невозможно.")
+            return "Память не установлена."
+        
+        memory = self.memory.get_memory("modules.memory")
+        if not memory:
+            print("SelfLearning: Модуль памяти не найден, обучение невозможно.")
+            return "Модуль памяти не найден."
+        
+        if "сохранить" in query:
+          notes = self.memory.get_memory("notes") if self.memory.get_memory("notes") else []
+          self.memory.update_memory("notes", notes + [f"Успешный запрос на сохранение памяти: {query}"])
+          print(f"SelfLearning: Записал успешный запрос на сохранение памяти: {query}")
+        elif "загрузить" in query:
+          notes = self.memory.get_memory("notes") if self.memory.get_memory("notes") else []
+          self.memory.update_memory("notes", notes + [f"Успешный запрос на загрузку памяти: {query}"])
+          print(f"SelfLearning: Записал успешный запрос на загрузку памяти: {query}")
+        elif "поиск" in query:
+           notes = self.memory.get_memory("notes") if self.memory.get_memory("notes") else []
+           self.memory.update_memory("notes", notes + [f"Успешный запрос на поиск в памяти: {query}"])
+           print(f"SelfLearning: Записал успешный запрос на поиск в памяти: {query}")
+        elif "анализ" in query:
+            notes = self.memory.get_memory("notes") if self.memory.get_memory("notes") else []
+            self.memory.update_memory("notes", notes + [f"Успешный запрос на анализ памяти: {query}"])
+            print(f"SelfLearning: Записал успешный запрос на анализ памяти: {query}")
+        elif "план" in query:
+            notes = self.memory.get_memory("notes") if self.memory.get_memory("notes") else []
+            self.memory.update_memory("notes", notes + [f"Успешный запрос на планирование памяти: {query}"])
+            print(f"SelfLearning: Записал успешный запрос на планирование памяти: {query}")
+        elif "обновить" in query:
+            notes = self.memory.get_memory("notes") if self.memory.get_memory("notes") else []
+            self.memory.update_memory("notes", notes + [f"Успешный запрос на обновление памяти: {query}"])
+            print(f"SelfLearning: Записал успешный запрос на обновление памяти: {query}")
+        elif "получить" in query:
+            notes = self.memory.get_memory("notes") if self.memory.get_memory("notes") else []
+            self.memory.update_memory("notes", notes + [f"Успешный запрос на получение данных из памяти: {query}"])
+            print(f"SelfLearning: Записал успешный запрос на получение данных из памяти: {query}")
+        elif "очистить" in query:
+            notes = self.memory.get_memory("notes") if self.memory.get_memory("notes") else []
+            self.memory.update_memory("notes", notes + [f"Успешный запрос на очистку памяти: {query}"])
+            print(f"SelfLearning: Записал успешный запрос на очистку памяти: {query}")
+        else:
+            notes = self.memory.get_memory("notes") if self.memory.get_memory("notes") else []
+            self.memory.update_memory("notes", notes + [f"Успешный запрос к памяти: {query}"])
+            print(f"SelfLearning: Записал успешный запрос к памяти: {query}")

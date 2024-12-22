@@ -7,6 +7,7 @@ from modules.tasks import Tasks
 from modules.self_analysis import SelfAnalysis
 from modules.files import Files
 from modules.memory import Memory
+from modules.self_learning import SelfLearning
 
 class AppManager:
     def __init__(self, memory, debug_callback):
@@ -14,7 +15,7 @@ class AppManager:
         self.memory = memory # Используем переданный объект memory
         print("AppManager: Инициализирована Memory")
         print("AppManager: Инициализация Parser - Начало")
-        self.parser = Parser()
+        self.parser = Parser(memory)
         print("AppManager: Инициализирован Parser - Конец")
         print("AppManager: Инициализация Search - Начало")
         self.search = Search()
@@ -32,6 +33,10 @@ class AppManager:
         print("AppManager: Инициализация Files - Начало")
         self.files = Files()
         print("AppManager: Инициализирован Files - Конец")
+        print("AppManager: Инициализация SelfLearning - Начало")
+        self.self_learning = SelfLearning()
+        print("AppManager: Инициализирован SelfLearning - Конец")
+        self.self_learning.set_memory(self.memory)
         self.debug_callback = debug_callback
         print("AppManager: Инициализация - Конец")
     
@@ -122,6 +127,9 @@ class AppManager:
       else:
         self.debug_callback(f"AppManager: handle_memory: Неизвестный запрос памяти.", 'app_manager')
         return "unknown", None
+    
+    def handle_self_learning(self):
+       return self.self_learning.learn()
 
-    def record_interaction(self, query, result):
-      self.memory.record_interaction(query, result)
+    def record_interaction(self, query, result, error=None):
+      self.memory.record_interaction(query, result, error)

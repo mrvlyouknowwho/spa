@@ -2,8 +2,8 @@
 from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout,
                              QLineEdit, QPushButton, QTextEdit, QMessageBox,
                              QComboBox, QLabel, QProgressBar, QHBoxLayout,
-                             QApplication)
-from PyQt6.QtCore import Qt, QTimer
+                             QApplication, QScrollArea)
+from PyQt6.QtCore import Qt, QTimer, QSize
 from PyQt6.QtGui import QClipboard
 from modules.parser import Parser
 from modules.search import Search
@@ -18,6 +18,7 @@ from config import Config
 from logger import Logger
 
 import datetime
+import random
 
 class InputWidget(QWidget):
     def __init__(self, main_window):
@@ -87,10 +88,17 @@ class MainWindow(QMainWindow):
             self.progress_bar.setValue(0)
             self.layout.addWidget(self.progress_bar)
             print("MainWindow: Добавлен Progressbar")
+            
+            self.scroll_area = QScrollArea()
+            self.scroll_area.setWidgetResizable(True)
+            self.scroll_area_widget = QWidget()
+            self.scroll_area_layout = QVBoxLayout(self.scroll_area_widget)
+            self.scroll_area.setWidget(self.scroll_area_widget)
+            self.layout.addWidget(self.scroll_area)
 
             self.result_output = OutputWidget()
             print("MainWindow: Инициализирован OutputWidget")
-            self.layout.addWidget(self.result_output)
+            self.scroll_area_layout.addWidget(self.result_output)
             print("MainWindow: Добавлен OutputWidget")
             
             try:
@@ -105,6 +113,7 @@ class MainWindow(QMainWindow):
             
             self.last_query = None
             self.load_state()
+            self._create_dynamic_ui()
             print("MainWindow: Инициализация - Конец")
             self.show()
             print("MainWindow: Показано окно")
@@ -133,7 +142,7 @@ class MainWindow(QMainWindow):
             task, parameters = self.app_manager.execute_query(query)
             
             if task == "search" or task == "calculator":
-              self.thread_manager.start_worker_thread(task, parameters, self.update_progress_bar, self.handle_worker_result)
+              self.thread_manager.start_worker_thread(task, parameters, self.update_progress_bar, self.handle_worker_result, self.handle_worker_error)
             elif task == "code":
                 result = self.app_manager.handle_code(parameters)
                 self.result_output.append(f"Сгенерированный код:\n{result}\n")
@@ -184,6 +193,8 @@ class MainWindow(QMainWindow):
             else:
                 self.result_output.append("Неизвестный запрос.\n")
                 self._debug(f"GUI: Неизвестный запрос.", 'gui')
+            
+            self.learn()
             self.app_manager.record_interaction(query, "OK")
         except Exception as e:
             self.result_output.append(f"Ошибка выполнения запроса: {e}\n")
@@ -196,32 +207,36 @@ class MainWindow(QMainWindow):
     def handle_worker_result(self, results):
       self.result_output.append(f"{results}\n")
       self._debug(f"GUI: Результат: {results}", 'gui')
+      
+    def handle_worker_error(self, error):
+      self.result_output.append(f"Ошибка: {error}\n")
+      self._debug(f"GUI: Ошибка: {error}", 'gui')
 
     def create_button(self):
         button = QPushButton("Новая кнопка")
         button.clicked.connect(lambda: self.result_output.append("Кнопка нажата!\n"))
-        self.layout.addWidget(button)
+        self.scroll_area_layout.addWidget(button)
         self.result_output.append("Кнопка создана.\n")
         self._debug(f"GUI: create_button: Создана кнопка.\n", 'gui')
 
     def create_input_field(self):
         input_field = QLineEdit()
         input_field.setPlaceholderText("Введите текст...")
-        self.layout.addWidget(input_field)
+        self.scroll_area_layout.addWidget(input_field)
         self.result_output.append("Поле ввода создано.\n")
         self._debug(f"GUI: create_input_field: Создано поле ввода.\n", 'gui')
 
     def create_text_field(self):
         text_field = QTextEdit()
         text_field.setReadOnly(True)
-        self.layout.addWidget(text_field)
+        self.scroll_area_layout.addWidget(text_field)
         self.result_output.append("Текстовое поле создано.\n")
         self._debug(f"GUI: create_text_field: Создано текстовое поле.\n", 'gui')
 
     def create_combo_box(self):
         combo_box = QComboBox()
         combo_box.addItems(["Пункт 1", "Пункт 2", "Пункт 3"])
-        self.layout.addWidget(combo_box)
+        self.scroll_area_layout.addWidget(combo_box)
         self.result_output.append("Выпадающий список создан.\n")
         self._debug(f"GUI: create_combo_box: Создан выпадающий список.\n", 'gui')
 
@@ -232,12 +247,12 @@ class MainWindow(QMainWindow):
             return
         try:
             button_index = int(words[3])
-            if button_index < 0 or button_index >= self.layout.count():
+            if button_index < 0 or button_index >= self.scroll_area_layout.count():
               self.result_output.append(f"Некорректный индекс кнопки: {button_index}.\n")
               self._debug(f"GUI: change_button_text: Некорректный индекс кнопки: {button_index}.\n", 'gui')
               return
             new_text = " ".join(words[4:])
-            item = self.layout.itemAt(button_index)
+            item = self.scroll_area_layout.itemAt(button_index)
             if item and item.widget() and isinstance(item.widget(), QPushButton):
                 button = item.widget()
                 button.setText(new_text)
@@ -374,8 +389,89 @@ class MainWindow(QMainWindow):
       except Exception as e:
           self._debug(f"GUI: load_state: Ошибка загрузки состояния: {e}", 'gui')
           self.result_output.append(f"Ошибка загрузки состояния: {e}\n")
+    
+    def learn(self):
+      self._debug(f"GUI: learn: Запускаю процесс обучения", 'gui')
+      try:
+        result = self.app_manager.handle_self_learning()
+        self._debug(f"GUI: learn: Процесс обучения завершен. {result}", 'gui')
+      except Exception as e:
+        self._debug(f"GUI: learn: Ошибка во время обучения: {e}", 'gui')
+        self.result_output.append(f"Ошибка во время обучения: {e}")
 
     def _debug(self, message, module=None):
       self.logger.debug(message)
       if hasattr(self, 'debug_output') and self.debug_output:
         self.debug_output.append(f"{message}\n")
+    
+    def _create_dynamic_ui(self):
+      
+      plan = self.memory.get_memory("plans.current")
+      
+      if not plan or not isinstance(plan, dict):
+        self._debug(f"GUI: _create_dynamic_ui: Нет плана для создания интерфейса.", 'gui')
+        self.result_output.append(f"Нет плана для создания интерфейса.\n")
+        return
+      
+      self._debug(f"GUI: _create_dynamic_ui: Начинаю создание интерфейса по плану.", 'gui')
+      
+      for key, value in plan.items():
+        if key == "components":
+          if not isinstance(value, list):
+            self._debug(f"GUI: _create_dynamic_ui: Ошибка: components не список.", 'gui')
+            self.result_output.append(f"Ошибка: components не список.\n")
+            continue
+          for component in value:
+            if not isinstance(component, dict):
+              self._debug(f"GUI: _create_dynamic_ui: Ошибка: компонент не словарь.", 'gui')
+              self.result_output.append(f"Ошибка: компонент не словарь.\n")
+              continue
+            
+            component_type = component.get("type")
+            if component_type == "button":
+              text = component.get("text", "Новая кнопка")
+              button = QPushButton(text)
+              button.clicked.connect(lambda: self.result_output.append(f"Кнопка '{text}' нажата!\n"))
+              self.scroll_area_layout.addWidget(button)
+              self._debug(f"GUI: _create_dynamic_ui: Создана кнопка с текстом: {text}.", 'gui')
+              self.result_output.append(f"Создана кнопка с текстом: {text}.\n")
+            elif component_type == "input_field":
+              placeholder = component.get("placeholder", "Введите текст...")
+              input_field = QLineEdit()
+              input_field.setPlaceholderText(placeholder)
+              self.scroll_area_layout.addWidget(input_field)
+              self._debug(f"GUI: _create_dynamic_ui: Создано поле ввода с плейсхолдером: {placeholder}.", 'gui')
+              self.result_output.append(f"Создано поле ввода с плейсхолдером: {placeholder}.\n")
+            elif component_type == "text_field":
+              text_field = QTextEdit()
+              text_field.setReadOnly(True)
+              self.scroll_area_layout.addWidget(text_field)
+              self._debug(f"GUI: _create_dynamic_ui: Создано текстовое поле.", 'gui')
+              self.result_output.append("Создано текстовое поле.\n")
+            elif component_type == "combo_box":
+              items = component.get("items", ["Пункт 1", "Пункт 2", "Пункт 3"])
+              combo_box = QComboBox()
+              combo_box.addItems(items)
+              self.scroll_area_layout.addWidget(combo_box)
+              self._debug(f"GUI: _create_dynamic_ui: Создан выпадающий список с элементами: {items}.", 'gui')
+              self.result_output.append(f"Создан выпадающий список с элементами: {items}.\n")
+            else:
+              self._debug(f"GUI: _create_dynamic_ui: Неизвестный тип компонента: {component_type}.", 'gui')
+              self.result_output.append(f"Неизвестный тип компонента: {component_type}.\n")
+        
+        elif key == "layout":
+            layout_type = value.get("type")
+            if layout_type == "vertical":
+                self._debug(f"GUI: _create_dynamic_ui: Тип вертикальной компановки: {layout_type}.", 'gui')
+                self.result_output.append(f"Тип вертикальной компановки: {layout_type}.\n")
+            elif layout_type == "horizontal":
+                self._debug(f"GUI: _create_dynamic_ui: Тип горизонтальной компановки: {layout_type}.", 'gui')
+                self.result_output.append(f"Тип горизонтальной компановки: {layout_type}.\n")
+            else:
+                self._debug(f"GUI: _create_dynamic_ui: Неизвестный тип компановки: {layout_type}.", 'gui')
+                self.result_output.append(f"Неизвестный тип компановки: {layout_type}.\n")
+        else:
+            self._debug(f"GUI: _create_dynamic_ui: Неизвестный ключ в плане: {key}.", 'gui')
+            self.result_output.append(f"Неизвестный ключ в плане: {key}.\n")
+      self._debug(f"GUI: _create_dynamic_ui: Интерфейс создан по плану.", 'gui')
+      self.result_output.append(f"Интерфейс создан по плану.\n")
