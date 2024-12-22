@@ -1,0 +1,6 @@
+%USERPROFILE%/.pyenv
+venv
+__pycache__
+*.pyc
+*.log
+*.txt
