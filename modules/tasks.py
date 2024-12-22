@@ -15,6 +15,8 @@ class Tasks:
 
     def create_calculator(self, expression):
         try:
+            if not expression:
+              return "Некорректное выражение."
             expression = expression.replace(" ", "")
             if re.match(r"^[0-9+\-*/().]+$", expression):
                 result = eval(expression)

@@ -1,9 +1,7 @@
-from transformers import pipeline
-
 class Engine:
     def __init__(self):
-        self.generator = pipeline('text-generation', model='distilgpt2')
+        self.model = "placeholder"
 
     def generate_text(self, prompt, max_length=100):
-        generated_text = self.generator(prompt, max_length=max_length, num_return_sequences=1)[0]['generated_text']
-        return generated_text
+        # Заглушка для генерации текста
+        return f"Заглушка: Сгенерированный текст для запроса '{prompt}'. Модуль генерации текста пока не работает."

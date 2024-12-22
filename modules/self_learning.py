@@ -51,9 +51,12 @@ class SelfLearning:
         elif "память" in words:
             self.memory.update_memory("modules.parser.tasks", self.memory.get_memory("modules.parser.tasks") + ["память"])
         else:
-            self.memory.update_memory("notes", self.memory.get_memory("notes") + [f"Не удалось обучить парсер на запросе: {query}"])
-            return f"Не удалось обучить парсер на запросе: {query}"
-        return f"Парсер обучен на запросе: {query}"
+            new_rule = re.escape(query)
+            parser_object = self.memory.get_memory("modules.parser")
+            parser_object.add_rule(new_rule, query.split()[0])
+            self.memory.update_memory("modules.parser", parser_object)
+            self.memory.update_memory("notes", self.memory.get_memory("notes") + [f"Добавлено новое правило парсера: {query} -> {query.split()[0]}"])
+            return f"Парсер обучен на запросе: {query}"
 
     def learn_engine(self, query):
         if not self.memory:
