@@ -4,6 +4,7 @@ import os
 
 class DatabaseManager:
     def __init__(self, db_name="spa_data.db"):
+        print("DatabaseManager: Инициализация")
         self.db_name = db_name
         self.conn = None
         self.cursor = None

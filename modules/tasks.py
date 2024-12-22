@@ -1,10 +1,11 @@
 import re
 import random
-try:
-    from googletrans import Translator
-except ImportError:
-    print("Модуль googletrans не установлен. Пожалуйста, установите его с помощью команды: pip install googletrans==4.0.0-rc1")
-    Translator = None
+# try:
+#     from googletrans import Translator
+# except ImportError:
+#     print("Модуль googletrans не установлен. Пожалуйста, установите его с помощью команды: pip install googletrans==4.0.0-rc1")
+#     Translator = None
+Translator = None
 
 class Tasks:
     def __init__(self):
@@ -41,14 +42,15 @@ class Tasks:
             return "Автоматизация действия пока не реализована."
 
     def translate_text(self, text, dest_lang="en"):
-        if self.translator:
-            try:
-                translation = self.translator.translate(text, dest=dest_lang)
-                return translation.text
-            except Exception as e:
-                return f"Ошибка перевода: {e}"
-        else:
-            return "Модуль googletrans не установлен."
+      return "Перевод текста не реализован"
+      #   if self.translator:
+      #       try:
+      #           translation = self.translator.translate(text, dest=dest_lang)
+      #           return translation.text
+      #       except Exception as e:
+      #           return f"Ошибка перевода: {e}"
+      #   else:
+      #       return "Модуль googletrans не установлен."
 
     def find_synonyms(self, word):
         # Здесь будет логика поиска синонимов
