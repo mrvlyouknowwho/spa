@@ -1,6 +1,7 @@
-%USERPROFILE%/.pyenv
+%USERPROFILE%
 venv
 __pycache__
 *.pyc
 *.log
 *.txt
+get_repo_structure.py
