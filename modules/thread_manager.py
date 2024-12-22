@@ -3,7 +3,7 @@ from PyQt6.QtCore import QThread, pyqtSignal
 from modules.search import Search
 from modules.tasks import Tasks
 
-class WorkerThread(QThread):
+class thread_manager(QThread):
     progress_signal = pyqtSignal(int)
     result_signal = pyqtSignal(str)
     
@@ -68,7 +68,7 @@ class ThreadManager:
           self.worker_thread.stop()
           self.worker_thread.wait()
         
-        self.worker_thread = WorkerThread(task, parameters, self.debug_callback)
+        self.worker_thread = thread_manager(task, parameters, self.debug_callback)
         if progress_callback:
             self.worker_thread.progress_signal.connect(progress_callback)
         if result_callback:

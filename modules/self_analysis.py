@@ -8,19 +8,17 @@ class SelfAnalysis:
     def __init__(self):
         print("SelfAnalysis: Инициализация")
         self.memory = None
-        self.user_interactions = []
+        
 
     def set_memory(self, memory):
       print("SelfAnalysis: Установка памяти.")
       self.memory = memory
 
     def record_interaction(self, query, result):
-        print(f"SelfAnalysis: Запись взаимодействия: запрос='{query}', результат='{result}'")
-        self.user_interactions.append({"query": query, "result": result})
-        if self.memory:
-            self.memory.update_memory("past_actions", self.user_interactions)
-        else:
-            print("SelfAnalysis: Память не установлена, запись взаимодействия невозможна.")
+      if self.memory:
+        self.memory.record_interaction(query, result)
+      else:
+         print("SelfAnalysis: Память не установлена, запись взаимодействия невозможна.")
 
     def analyze(self, module_name="self"):
         try:

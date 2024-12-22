@@ -129,61 +129,66 @@ class MainWindow(QMainWindow):
         self.result_output.append(f"Запрос: {query}\n")
         self._debug(f"GUI: Запрос: {query}", 'gui')
         
-        task, parameters = self.app_manager.execute_query(query)
-        
-        if task == "search" or task == "calculator":
-          self.thread_manager.start_worker_thread(task, parameters, self.update_progress_bar, self.handle_worker_result)
-        elif task == "code":
-            result = self.app_manager.handle_code(parameters)
-            self.result_output.append(f"Сгенерированный код:\n{result}\n")
-        elif task == "learning":
-             result = self.app_manager.handle_learning(parameters)
-             if isinstance(result, str):
-               self.result_output.append(result + "\n")
-             else:
-                self.result_output.append("Результаты поиска по обучению Python:\n")
-                for item in result:
-                    self.result_output.append(f"{item['title']}: {item['url']}\n")
-        elif task == "interface":
-            result = self.app_manager.handle_interface(parameters)
-            if result == "create_button":
-              self.create_button()
-            elif result == "create_input_field":
-              self.create_input_field()
-            elif result == "create_text_field":
-              self.create_text_field()
-            elif result == "create_combo_box":
-              self.create_combo_box()
-            elif result == "change_button_text":
-              self.change_button_text(parameters)
-        elif task == "file":
-          result = self.app_manager.handle_file(parameters)
-          if result == "load_file":
-            self.load_file()
-          elif result == "save_file":
-            self.save_file()
-        elif task == "memory":
-            result = self.app_manager.handle_memory(parameters)
-            if result == "save_memory":
-              self.save_memory()
-            elif result == "load_memory":
-              self.load_memory()
-            elif result == "search_memory":
-              self.search_memory(parameters)
-            elif result == "analyze_memory":
-              self.analyze_memory()
-            elif result == "plan_memory":
-              self.plan_memory()
-            elif result == "update_memory":
-                self.update_memory(parameters["key"], parameters["value"])
-            elif result == "get_memory":
-              self.get_memory(parameters)
-            elif result == "clear_memory":
-              self.clear_memory()
-        else:
-            self.result_output.append("Неизвестный запрос.\n")
-            self._debug(f"GUI: Неизвестный запрос.", 'gui')
-        self.app_manager.record_interaction(query, "OK")
+        try:
+            task, parameters = self.app_manager.execute_query(query)
+            
+            if task == "search" or task == "calculator":
+              self.thread_manager.start_worker_thread(task, parameters, self.update_progress_bar, self.handle_worker_result)
+            elif task == "code":
+                result = self.app_manager.handle_code(parameters)
+                self.result_output.append(f"Сгенерированный код:\n{result}\n")
+            elif task == "learning":
+                 result = self.app_manager.handle_learning(parameters)
+                 if isinstance(result, str):
+                   self.result_output.append(result + "\n")
+                 else:
+                    self.result_output.append("Результаты поиска по обучению Python:\n")
+                    for item in result:
+                        self.result_output.append(f"{item['title']}: {item['url']}\n")
+            elif task == "interface":
+                result = self.app_manager.handle_interface(parameters)
+                if result == "create_button":
+                  self.create_button()
+                elif result == "create_input_field":
+                  self.create_input_field()
+                elif result == "create_text_field":
+                  self.create_text_field()
+                elif result == "create_combo_box":
+                  self.create_combo_box()
+                elif result == "change_button_text":
+                  self.change_button_text(parameters)
+            elif task == "file":
+              result = self.app_manager.handle_file(parameters)
+              if result == "load_file":
+                self.load_file()
+              elif result == "save_file":
+                self.save_file()
+            elif task == "memory":
+                result = self.app_manager.handle_memory(parameters)
+                if result == "save_memory":
+                  self.save_memory()
+                elif result == "load_memory":
+                  self.load_memory()
+                elif result == "search_memory":
+                  self.search_memory(parameters)
+                elif result == "analyze_memory":
+                  self.analyze_memory()
+                elif result == "plan_memory":
+                  self.plan_memory()
+                elif result == "update_memory":
+                    self.update_memory(parameters["key"], parameters["value"])
+                elif result == "get_memory":
+                  self.get_memory(parameters)
+                elif result == "clear_memory":
+                  self.clear_memory()
+            else:
+                self.result_output.append("Неизвестный запрос.\n")
+                self._debug(f"GUI: Неизвестный запрос.", 'gui')
+            self.app_manager.record_interaction(query, "OK")
+        except Exception as e:
+            self.result_output.append(f"Ошибка выполнения запроса: {e}\n")
+            self._debug(f"GUI: Ошибка выполнения запроса: {e}", 'gui')
+            QMessageBox.critical(self, "Ошибка запроса", f"Произошла ошибка при выполнении запроса: {e}")
       
     def update_progress_bar(self, value):
         self.progress_bar.setValue(value)
@@ -227,9 +232,14 @@ class MainWindow(QMainWindow):
             return
         try:
             button_index = int(words[3])
+            if button_index < 0 or button_index >= self.layout.count():
+              self.result_output.append(f"Некорректный индекс кнопки: {button_index}.\n")
+              self._debug(f"GUI: change_button_text: Некорректный индекс кнопки: {button_index}.\n", 'gui')
+              return
             new_text = " ".join(words[4:])
-            button = self.layout.itemAt(button_index).widget()
-            if isinstance(button, QPushButton):
+            item = self.layout.itemAt(button_index)
+            if item and item.widget() and isinstance(item.widget(), QPushButton):
+                button = item.widget()
                 button.setText(new_text)
                 self.result_output.append(f"Текст кнопки {button_index} изменен на '{new_text}'.\n")
                 self._debug(f"GUI: change_button_text: Текст кнопки {button_index} изменен на '{new_text}'.\n", 'gui')
@@ -260,8 +270,12 @@ class MainWindow(QMainWindow):
     def save_memory(self):
       try:
         memory_data = self.memory.save_memory()
-        self.result_output.append(f"Память сохранена:\n{memory_data}\n")
-        self._debug(f"GUI: handle_memory: Память сохранена:\n{memory_data}\n", 'gui')
+        if memory_data:
+          self.result_output.append(f"Память сохранена:\n{memory_data}\n")
+          self._debug(f"GUI: handle_memory: Память сохранена:\n{memory_data}\n", 'gui')
+        else:
+          self.result_output.append(f"Ошибка сохранения памяти.\n")
+          self._debug(f"GUI: handle_memory: Ошибка сохранения памяти.\n", 'gui')
       except Exception as e:
         self.result_output.append(f"Ошибка сохранения памяти: {e}\n")
         self._debug(f"GUI: handle_memory: Ошибка сохранения памяти: {e}\n", 'gui')

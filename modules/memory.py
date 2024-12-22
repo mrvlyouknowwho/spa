@@ -3,7 +3,7 @@ import json
 import random
 import heapq
 import os
-
+import datetime
 from modules.database import DatabaseManager
 
 class Memory:
@@ -12,8 +12,9 @@ class Memory:
         self.db = DatabaseManager()
         self.data = {}
         self.instructions = self._load_instructions()
+        self.weights = {} # Добавлено хранение весов
         # self._load_initial_data() # Перенесено в load_state() в gui.py
-    
+
     def _load_instructions(self):
         instructions = {
             "restore_state": "Для восстановления состояния после перезапуска, загрузите сохраненную память.",
@@ -21,10 +22,11 @@ class Memory:
             "weight_algorithm": "Веса элементов памяти динамически изменяются в зависимости от их использования.",
             "learning_algorithm": "Самообучение происходит на основе данных о взаимодействии с пользователем.",
             "parser_tasks": "Парсер обучается на новых запросах, которые он не понимает.",
-            "engine_tasks": "Движок обучается на новых данных, которые он получает от пользователя."
+            "engine_tasks": "Движок обучается на новых данных, которые он получает от пользователя.",
+             "plan_actions": "Используйте этот метод для планирования действий"
         }
         return instructions
-      
+
     def _load_initial_data(self):
       print("Memory: Загрузка начальных данных")
       initial_data = {
@@ -50,6 +52,10 @@ class Memory:
             }
         },
         "past_actions": [],
+          "plans" : {
+            "current" : None,
+            "history" : []
+          },
         "notes": []
         }
       self.data = initial_data
@@ -65,28 +71,36 @@ class Memory:
 
     def save_memory(self):
       try:
-        self.db.save_data("memory_state", self.data)
-        print("Memory: Память сохранена в базу данных.")
-        return json.dumps(self.data, separators=(',', ':'))
+        if self.db.save_data("memory_state", self.data):
+          print("Memory: Память сохранена в базу данных.")
+          return json.dumps(self.data, separators=(',', ':'))
+        else:
+          print("Memory: Ошибка сохранения памяти в базу данных.")
+          return None
       except Exception as e:
         print(f"Memory: Ошибка сохранения памяти: {e}")
         return None
        
-    def add_past_action(self, timestamp, action, result):
-      self.db.add_past_action(timestamp, action, result)
-    
+    def record_interaction(self, query, result, error=None):
+      timestamp = str(datetime.datetime.now())
+      self.db.add_past_action(timestamp, query, result)
+      past_actions = self.get_past_actions()
+      self.update_memory("past_actions", past_actions + [{"timestamp":timestamp, "query":query, "result":result, "error":error}])
+      
     def get_past_actions(self):
-      return self.db.get_past_actions()
-    
+        return self.db.get_past_actions()
+
     def update_memory(self, key, value):
         parts = key.split('.')
         current = self.data
         for part in parts[:-1]:
             if part not in current:
-                current[part] = {}
+                print(f"Memory: Ключ не найден: {'.'.join(parts[:parts.index(part) + 1])}")
+                return False
             current = current[part]
         current[parts[-1]] = value
         print(f"Memory: Обновлена память: {key} = {value}")
+        return True
     
     def get_memory(self, key):
       parts = key.split('.')
@@ -125,6 +139,14 @@ class Memory:
     def plan_actions(self):
         print("Memory: Планирование действий пока не реализовано.")
         return "Планирование действий пока не реализовано."
+    
+    def update_plan(self, plan):
+      self.update_memory("plans.current", plan)
+
+    def add_plan_to_history(self):
+      current_plan = self.get_memory("plans.current")
+      plan_history = self.get_memory("plans.history") if self.get_memory("plans.history") else []
+      self.update_memory("plans.history", plan_history + [current_plan])
 
     def update_weights(self, key):
         if not hasattr(self, 'weights'):

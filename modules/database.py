@@ -50,8 +50,11 @@ class DatabaseManager:
                 self.cursor.execute("INSERT OR REPLACE INTO project_info (key, value) VALUES (?, ?)", (key, value_json))
                 self.conn.commit()
                 print(f"DatabaseManager: Данные сохранены. Key: {key}")
+                return True
             except Exception as e:
                print(f"DatabaseManager: Ошибка сохранения данных: {e}")
+               return False
+        return False
 
     def load_data(self, key):
         if self.cursor:
@@ -73,10 +76,13 @@ class DatabaseManager:
             self.cursor.execute("INSERT INTO past_actions (timestamp, action, result) VALUES (?, ?, ?)", (timestamp, action, result))
             self.conn.commit()
             print("DatabaseManager: Действие добавлено.")
+            return True
          except Exception as e:
             print(f"DatabaseManager: Ошибка добавления действия: {e}")
+            return False
        else:
             print(f"DatabaseManager: Нет подключения к базе данных, добавление действия невозможно.")
+            return False
           
     def get_past_actions(self):
         if self.cursor:

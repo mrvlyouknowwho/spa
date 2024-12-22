@@ -26,6 +26,9 @@ class Parser:
         elif re.search(r"создай калькулятор\s*(.+)", text):
             print("Parser: Определено: калькулятор с параметрами")
             return "калькулятор", re.search(r"создай калькулятор\s*(.+)", text).groups()
+        elif re.search(r"(\d+[\+\-\*\/]\d+)", text):
+            print("Parser: Определено: калькулятор (выражение)")
+            return "калькулятор", re.search(r"(\d+[\+\-\*\/]\d+)", text).groups()
         elif "проанализируй свой код" in text:
             print("Parser: Определено: код")
             return "код", ["анализ"]
@@ -44,9 +47,6 @@ class Parser:
         elif "сохранить память" in text or "загрузить память" in text or "поиск в памяти" in text or "анализ памяти" in text or "план действий" in text or "обновить память" in text or "получить из памяти" in text or "очистить память" in text:
             print("Parser: Определено: память")
             return "память", text.split()
-        elif "напиши" in text and "калькулятор" in text:
-             print("Parser: Определено: поиск (калькулятор)")
-             return "поиск", text.split()
         else:
             print("Parser: Определено: поиск")
             return "поиск", text.split()

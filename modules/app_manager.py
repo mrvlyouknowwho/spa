@@ -43,7 +43,10 @@ class AppManager:
         if query_type == "поиск":
           return "search", {'query':" ".join(words[1:])}
         elif query_type == "калькулятор":
-          return "calculator", " ".join(words[1:])
+          if words:
+             return "calculator", " ".join(words[1:])
+          else:
+             return "calculator", None
         elif query_type == "код":
           return "code", words
         elif query_type == "обучение":
@@ -121,5 +124,4 @@ class AppManager:
         return "unknown", None
 
     def record_interaction(self, query, result):
-      self.self_analysis.record_interaction(query, result)
-      self.memory.add_past_action(str(datetime.datetime.now()), query, result)
+      self.memory.record_interaction(query, result)

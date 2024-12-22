@@ -1,6 +1,8 @@
 # modules/tasks.py
 import re
 import random
+import ast
+
 # try:
 #     from googletrans import Translator
 # except ImportError:
@@ -21,18 +23,18 @@ class Tasks:
         try:
             if not expression:
               print("Tasks: Некорректное выражение.")
-              return "Некорректное выражение."
+              return "Некорректное выражение.", "Некорректное выражение"
             expression = expression.replace(" ", "")
-            if re.match(r"^[0-9+\-*/().]+$", expression):
-                result = eval(expression)
-                print(f"Tasks: Результат вычисления: {result}")
-                return result
-            else:
-                print("Tasks: Некорректное выражение.")
-                return "Некорректное выражение."
+            # if re.match(r"^[0-9+\-*/().]+$", expression):
+            result = ast.literal_eval(expression)
+            print(f"Tasks: Результат вычисления: {result}")
+            return result, "ok"
+            # else:
+            #     print("Tasks: Некорректное выражение.")
+            #     return "Некорректное выражение."
         except Exception as e:
             print(f"Tasks: Ошибка вычисления: {e}")
-            return f"Ошибка вычисления: {e}"
+            return f"Ошибка вычисления: {e}", "Ошибка вычисления"
 
     def analyze_text(self, text):
         print(f"Tasks: Анализ текста: {text}")

@@ -6,27 +6,35 @@ class SelfLearning:
     def __init__(self):
       print("SelfLearning: Инициализация")
       self.memory = None
-      self.user_interactions = []
 
     def set_memory(self, memory):
         print("SelfLearning: Установка памяти")
         self.memory = memory
 
-    def record_interaction(self, query, result):
-      print(f"SelfLearning: Запись взаимодействия: запрос='{query}', результат='{result}'")
-      self.user_interactions.append({"query": query, "result": result})
-      if self.memory:
-        self.memory.update_memory("past_actions", self.user_interactions)
-      else:
-        print("SelfLearning: Память не установлена, запись взаимодействия невозможна.")
-
     def learn(self):
         print("SelfLearning: Начало процесса обучения")
-        if not self.user_interactions:
+        if not self.memory:
+            print("SelfLearning: Память не установлена, обучение невозможно.")
+            return "Память не установлена."
+        past_actions = self.memory.get_memory("past_actions")
+        if not past_actions:
             print("SelfLearning: Нет данных для обучения.")
             return "Нет данных для обучения."
-        last_interaction = self.user_interactions[-1]
+
+        last_interaction = past_actions[-1]
         query = last_interaction["query"]
+        result, error = last_interaction.get("result"), last_interaction.get("error")
+        
+        if error:
+            notes = self.memory.get_memory("notes") if self.memory.get_memory("notes") else []
+            self.memory.update_memory("notes", notes + [f"Ошибка: {query}, причина: {error}"])
+            print(f"SelfLearning: Записал ошибку: {query}, причина: {error}")
+            if "калькулятор" in query:
+              self.learn_calculator(query, error)
+            elif "поиск" in query:
+               self.learn_search(query, error)
+            return f"Записал ошибку и начал обучение: {query}, причина: {error}"
+        
         if "неизвестно" in query:
             notes = self.memory.get_memory("notes") if self.memory.get_memory("notes") else []
             self.memory.update_memory("notes", notes + [f"Неизвестный запрос: {query}"])
@@ -105,3 +113,50 @@ class SelfLearning:
         self.memory.update_memory("modules.engine.tasks", tasks + [query])
         print(f"SelfLearning: Движок обучен на запросе: {query}")
         return f"Движок обучен на запросе: {query}"
+    
+    def learn_calculator(self, query, error):
+         if "Некорректное выражение" in error:
+           notes = self.memory.get_memory("notes") if self.memory.get_memory("notes") else []
+           self.memory.update_memory("notes", notes + [f"Некорректное выражение калькулятора: {query}"])
+           print(f"SelfLearning: Записал ошибку калькулятора: {query}")
+           parser = self.memory.get_memory("modules.parser")
+           if parser:
+               new_rule = re.escape(query)
+               parser.add_rule(new_rule, "калькулятор")
+               self.memory.update_memory("modules.parser", parser)
+               notes = self.memory.get_memory("notes") if self.memory.get_memory("notes") else []
+               self.memory.update_memory("notes", notes + [f"Добавлено новое правило парсера для калькулятора: {query} -> калькулятор"])
+               print(f"SelfLearning: Парсер обучен на запросе калькулятора: {query}")
+           else:
+                print("SelfLearning: Модуль парсера не найден, обучение невозможно.")
+                return "Модуль парсера не найден."
+    def learn_search(self, query, error):
+       if "Нет подключения к интернету" in error:
+           notes = self.memory.get_memory("notes") if self.memory.get_memory("notes") else []
+           self.memory.update_memory("notes", notes + [f"Ошибка поиска: нет подключения к интернету"])
+           print(f"SelfLearning: Записал ошибку поиска: нет подключения к интернету.")
+           search = self.memory.get_memory("modules.search")
+           if search:
+               search.set_search_engine("google")
+               self.memory.update_memory("modules.search", search)
+               notes = self.memory.get_memory("notes") if self.memory.get_memory("notes") else []
+               self.memory.update_memory("notes", notes + [f"Поменял поисковую систему на google."])
+               print("SelfLearning: Поменял поисковую систему на google")
+           else:
+                print("SelfLearning: Модуль поиска не найден, обучение невозможно.")
+                return "Модуль поиска не найден."
+       elif "Ошибка поиска" in error:
+           notes = self.memory.get_memory("notes") if self.memory.get_memory("notes") else []
+           self.memory.update_memory("notes", notes + [f"Ошибка поиска: {query}"])
+           print(f"SelfLearning: Записал ошибку поиска: {query}")
+           parser = self.memory.get_memory("modules.parser")
+           if parser:
+               new_rule = re.escape(query)
+               parser.add_rule(new_rule, "поиск")
+               self.memory.update_memory("modules.parser", parser)
+               notes = self.memory.get_memory("notes") if self.memory.get_memory("notes") else []
+               self.memory.update_memory("notes", notes + [f"Добавлено новое правило парсера для поиска: {query} -> поиск"])
+               print(f"SelfLearning: Парсер обучен на запросе поиска: {query}")
+           else:
+                print("SelfLearning: Модуль парсера не найден, обучение невозможно.")
+                return "Модуль парсера не найден."

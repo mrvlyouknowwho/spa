@@ -1,5 +1,6 @@
 # logger.py
 import logging
+import os
 from config import Config
 
 class Logger:
@@ -10,6 +11,12 @@ class Logger:
         self.logger.setLevel(logging.DEBUG if self.config.debug_mode else logging.INFO)
 
         formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+
+        # Ensure log directory exists
+        log_dir = os.path.dirname(self.config.log_file)
+        if log_dir and not os.path.exists(log_dir):
+            os.makedirs(log_dir)
+
         file_handler = logging.FileHandler(self.config.log_file, encoding='utf-8')
         file_handler.setFormatter(formatter)
         self.logger.addHandler(file_handler)
